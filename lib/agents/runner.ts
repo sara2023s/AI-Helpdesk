@@ -80,7 +80,7 @@ export async function runAgent(agentId: string, ticketId: string): Promise<void>
     const stream = await client.messages.stream({
       model: 'claude-opus-4-6',
       max_tokens: 4096,
-      thinking: { type: 'adaptive' },
+      thinking: { type: 'enabled' as const, budget_tokens: 2000 },
       system: systemPrompt,
       messages: [
         {

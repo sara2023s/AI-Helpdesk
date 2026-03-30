@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+code, pre, .mono {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+body {
+  background-color: #0a0a12;
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111120;
+}
+::-webkit-scrollbar-thumb {
+  background: #2d2d48;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3d3d60;
+}
+
+/* Agent typing animation */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.typing-dot {
+  animation: blink 1.2s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Status badge pulse for busy agents */
+@keyframes status-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+}
+.status-busy {
+  animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+/* Smooth card hover */
+.ticket-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.ticket-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+/* Markdown-like code blocks in comments */
+.comment-content pre {
+  background: #0f0f1a;
+  border: 1px solid #2d2d48;
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.comment-content code {
+  background: #1a1a2e;
+  border: 1px solid #2d2d48;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}

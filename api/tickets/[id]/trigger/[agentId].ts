@@ -1,9 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getDb } from '../../../../lib/supabase'
 import { runAgent } from '../../../../lib/agents/runner'
 
 export const config = {
   maxDuration: 300, // 5 minutes — requires Vercel Pro
+}
+
+async function getDb() {
+  const { createClient } = await import('@supabase/supabase-js')
+  return createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } },
+  )
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

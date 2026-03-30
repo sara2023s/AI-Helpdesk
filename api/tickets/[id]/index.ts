@@ -1,6 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getDb } from '../../../lib/supabase'
-import type { TicketRow } from '../../../lib/supabase'
+
+async function getDb() {
+  const { createClient } = await import('@supabase/supabase-js')
+  return createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } },
+  )
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -22,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'PATCH') {
-    const patch = req.body as Partial<TicketRow>
+    const patch = req.body
     const db = await getDb()
     const { data, error } = await db
       .from('tickets')

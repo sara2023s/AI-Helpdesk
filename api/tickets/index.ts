@@ -1,8 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { v4 as uuidv4 } from 'uuid'
-import { getDb } from '../../lib/supabase'
-import { notifyTicketCreated } from '../../lib/slack'
-import type { TicketRow } from '../../lib/supabase'
+
+async function getDb() {
+  const { createClient } = await import('@supabase/supabase-js')
+  return createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } },
+  )
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -35,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const now = new Date().toISOString()
-    const ticket: TicketRow = {
+    const ticket = {
       id: `T-${Date.now()}`,
       title: title.trim(),
       description: description.trim(),
@@ -60,7 +66,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single()
     if (error) return res.status(500).json({ error: error.message })
 
-    await notifyTicketCreated(data as TicketRow)
     return res.status(201).json(data)
   }
 

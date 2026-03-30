@@ -2,14 +2,15 @@ import { createClient } from '@supabase/supabase-js'
 
 // Server-side Supabase client — uses the service role key so it bypasses RLS.
 // Only import this in API routes (api/**), never in src/** (frontend).
-type SupabaseClient = ReturnType<typeof createClient>
 
 // Created on first use — NOT at module load time.
 // This prevents the Vercel cold-start crash if the import of @supabase/supabase-js
 // itself causes a side effect before env vars are injected.
-let _client: SupabaseClient | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _client: any = null
 
-function getClient(): SupabaseClient {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getClient(): any {
   if (!_client) {
     const url = process.env.SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -24,8 +25,11 @@ function getClient(): SupabaseClient {
 }
 
 // Transparent proxy so call sites remain `supabase.from(...)` etc.
-export const supabase = new Proxy({} as SupabaseClient, {
-  get(_t, prop: string | symbol) {
+// Typed as any to avoid `never` inference when Database generics are absent.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const supabase: any = new Proxy({} as any, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get(_t: any, prop: string | symbol) {
     return Reflect.get(getClient(), prop)
   },
 })

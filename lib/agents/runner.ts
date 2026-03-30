@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { getTicket, upsertTicket, updateAgent, type TicketRow } from '../supabase'
 import { recordTokenUsage, isCapacityAvailable } from '../usage'
 import { notifyAgentUpdate, notifyTicketDone, notifyTicketBlocked } from '../slack'
+import { commitFiles, type FileChange } from '../github'
+import { getProject } from '../projects'
 import { PERSONAS } from './personas'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
@@ -15,6 +17,8 @@ interface AgentResponse {
   clarificationQuestion: string | null
   plan: string | null
   actionItems: string[]
+  /** Files to commit to the project repo */
+  files?: FileChange[]
 }
 
 export async function runAgent(agentId: string, ticketId: string): Promise<void> {
@@ -150,6 +154,37 @@ export async function runAgent(agentId: string, ticketId: string): Promise<void>
     }
 
     await upsertTicket(updated)
+
+    // Commit files to GitHub if the agent produced any
+    if (parsed.files?.length) {
+      const project = getProject(ticket.project)
+      let commitNote = ''
+
+      if (project) {
+        const result = await commitFiles(
+          project.owner,
+          project.repo,
+          project.branch,
+          parsed.files,
+          ticket.id,
+          persona.name,
+        )
+        if (result.success) {
+          commitNote = `\n\n📦 Committed ${result.files.length} file${result.files.length !== 1 ? 's' : ''} to \`${project.repo}\`: [${result.commitSha}](${result.commitUrl})\n${result.files.map(f => `- \`${f}\``).join('\n')}`
+        } else {
+          commitNote = `\n\n⚠️ Could not commit to GitHub: ${result.error}`
+        }
+      } else {
+        commitNote = `\n\n⚠️ Project "${ticket.project}" not found in registry — code saved to ticket only.`
+      }
+
+      // Append commit info to the agent's comment
+      if (commitNote) {
+        const lastComment = updated.comments[updated.comments.length - 1]
+        if (lastComment) lastComment.content += commitNote
+        await upsertTicket(updated)
+      }
+    }
 
     // Slack notifications
     await notifyAgentUpdate(updated, agentId, persona.name, parsed.comment ?? '')

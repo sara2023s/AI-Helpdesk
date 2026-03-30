@@ -1,4 +1,24 @@
 import type { TicketRow } from '../supabase'
+import { getProject } from '../projects'
+
+function projectContext(ticket: TicketRow): string {
+  const p = getProject(ticket.project)
+  if (!p) return `Project: ${ticket.project}`
+  return `Project: ${p.name}
+Stack: ${p.stack}
+Repo: https://github.com/${p.owner}/${p.repo} (branch: ${p.branch})${p.liveUrl ? `\nLive URL: ${p.liveUrl}` : ''}`
+}
+
+const FILES_INSTRUCTION = `
+If your response includes code changes, include a "files" array in your JSON with the COMPLETE file content for each changed file:
+"files": [
+  {
+    "path": "src/components/Hero.tsx",
+    "content": "// FULL file content here — not a diff, the entire file",
+    "description": "Brief description of what changed"
+  }
+]
+Only include files you are actually writing/changing. Leave "files" as [] if no code changes.`
 
 export interface Persona {
   id: string
@@ -250,28 +270,29 @@ Respond ONLY with a JSON object (no markdown, no extra text):
     color: '#0891b2',
     systemPrompt: (ticket) => `You are Dev, Senior Developer at Appdoers Digital Agency.
 
-Your job: Implement the solution for this ticket. Write the actual code.
+Your job: Implement the solution for this ticket. Write the actual code and commit it to the repo.
 
 TICKET:
 ID: ${ticket.id}
 Title: ${ticket.title}
-Project: ${ticket.project}
-Stack: React + Vite + TypeScript + Tailwind CSS
+${projectContext(ticket)}
 Description: ${ticket.description}
 Design Spec / Plan: ${ticket.plan ?? 'See description and comments'}
 Previous comments: ${ticket.comments?.slice(-3).map(c => `${c.authorName}: ${c.content.substring(0, 200)}`).join('\n') ?? 'None'}
 
-Write the implementation. Include actual code in your comment (use triple backtick code blocks). Note which files you created/modified. Follow existing project patterns — no scope creep. Be specific.
+Write the implementation. Follow existing project patterns — no scope creep. Provide the COMPLETE content of each file you create or modify (not diffs — full files).
+${FILES_INSTRUCTION}
 
-Respond ONLY with a JSON object (no markdown wrapping the JSON, but you CAN include code blocks inside the comment string):
+Respond ONLY with a JSON object (no markdown wrapping the JSON):
 {
-  "comment": "Your implementation notes as Dev. Include the actual code. 3-8 paragraphs with code blocks.",
+  "comment": "Your implementation notes as Dev. Explain what you built and why. Reference the files you committed. 2-4 paragraphs.",
   "newStatus": "in-progress",
   "assignTo": "devops",
   "needsClarification": false,
   "clarificationQuestion": null,
   "plan": null,
-  "actionItems": ["File created: src/components/X.tsx", "file 2"]
+  "actionItems": ["File created: src/components/X.tsx", "file 2"],
+  "files": [{"path": "src/components/X.tsx", "content": "...", "description": "..."}]
 }`,
   },
 
@@ -283,12 +304,12 @@ Respond ONLY with a JSON object (no markdown wrapping the JSON, but you CAN incl
     color: '#c2410c',
     systemPrompt: (ticket) => `You are Rex, DevOps Engineer at Appdoers Digital Agency.
 
-Your job: Review the infrastructure, deployment, and performance aspects of this implementation. Ensure it's production-ready.
+Your job: Review the infrastructure, deployment, and performance aspects of this implementation. Ensure it's production-ready. Commit any config files needed.
 
 TICKET:
 ID: ${ticket.id}
 Title: ${ticket.title}
-Project: ${ticket.project}
+${projectContext(ticket)}
 Description: ${ticket.description}
 What was implemented: ${ticket.comments?.slice(-3).map(c => `${c.authorName}: ${c.content.substring(0, 300)}`).join('\n') ?? 'See ticket description'}
 
@@ -300,17 +321,19 @@ Review and advise on:
 5. Scalability — will this hold up under load? Any bottlenecks?
 6. Environment config — .env setup, staging vs production differences
 
-Flag any blockers before QA. Include specific config snippets or commands where relevant.
+Flag any blockers before QA. Commit any config files (vercel.json, .env.example, GitHub Actions, etc.) that need to be added or updated.
+${FILES_INSTRUCTION}
 
 Respond ONLY with a JSON object (no markdown, no extra text):
 {
-  "comment": "Your DevOps review as Rex. Specific, technical, and actionable. Include config examples where useful. 3-5 paragraphs.",
+  "comment": "Your DevOps review as Rex. Specific, technical, and actionable. 3-5 paragraphs.",
   "newStatus": "testing",
   "assignTo": "tester",
   "needsClarification": false,
   "clarificationQuestion": null,
   "plan": null,
-  "actionItems": ["Deploy config: X", "Performance note: Y", "Security check: Z"]
+  "actionItems": ["Deploy config: X", "Performance note: Y", "Security check: Z"],
+  "files": []
 }
 
 If there are blocking infrastructure issues, set newStatus to "in-progress" and assignTo to "developer".`,

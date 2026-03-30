@@ -2,18 +2,33 @@ import { createClient } from '@supabase/supabase-js'
 
 // Server-side Supabase client — uses the service role key so it bypasses RLS.
 // Only import this in API routes (api/**), never in src/** (frontend).
-function getSupabase() {
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) {
-    throw new Error(
-      `Missing Supabase env vars. SUPABASE_URL=${url ? 'set' : 'MISSING'}, SUPABASE_SERVICE_ROLE_KEY=${key ? 'set' : 'MISSING'}`,
-    )
+type SupabaseClient = ReturnType<typeof createClient>
+
+// Created on first use — NOT at module load time.
+// This prevents the Vercel cold-start crash if the import of @supabase/supabase-js
+// itself causes a side effect before env vars are injected.
+let _client: SupabaseClient | null = null
+
+function getClient(): SupabaseClient {
+  if (!_client) {
+    const url = process.env.SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) {
+      throw new Error(
+        `Missing Supabase env vars — SUPABASE_URL=${url ? 'ok' : 'MISSING'}, SUPABASE_SERVICE_ROLE_KEY=${key ? 'ok' : 'MISSING'}`,
+      )
+    }
+    _client = createClient(url, key, { auth: { persistSession: false } })
   }
-  return createClient(url, key, { auth: { persistSession: false } })
+  return _client
 }
 
-export const supabase = getSupabase()
+// Transparent proxy so call sites remain `supabase.from(...)` etc.
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_t, prop: string | symbol) {
+    return Reflect.get(getClient(), prop)
+  },
+})
 
 // ─── Types that mirror the DB schema ──────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../../../lib/supabase'
+import { getDb } from '../../../lib/supabase'
 import type { TicketRow } from '../../../lib/supabase'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -11,7 +11,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { id } = req.query as { id: string }
 
   if (req.method === 'GET') {
-    const { data, error } = await supabase
+    const db = await getDb()
+    const { data, error } = await db
       .from('tickets')
       .select('*')
       .eq('id', id)
@@ -22,7 +23,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'PATCH') {
     const patch = req.body as Partial<TicketRow>
-    const { data, error } = await supabase
+    const db = await getDb()
+    const { data, error } = await db
       .from('tickets')
       .update({ ...patch, updated_at: new Date().toISOString() })
       .eq('id', id)

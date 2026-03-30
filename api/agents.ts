@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../lib/supabase'
+import { getDb } from '../lib/supabase'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -9,7 +9,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { data, error } = await supabase
+  const db = await getDb()
+  const { data, error } = await db
     .from('agents')
     .select('*')
     .order('id')

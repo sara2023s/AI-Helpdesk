@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { v4 as uuidv4 } from 'uuid'
-import { supabase, getTicket, upsertTicket, updateAgent, type TicketRow } from '../supabase'
+import { getTicket, upsertTicket, updateAgent, type TicketRow } from '../supabase'
 import { recordTokenUsage, isCapacityAvailable } from '../usage'
 import { notifyAgentUpdate, notifyTicketDone, notifyTicketBlocked } from '../slack'
 import { PERSONAS } from './personas'

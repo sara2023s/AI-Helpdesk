@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { v4 as uuidv4 } from 'uuid'
-import { supabase } from '../../lib/supabase'
+import { getDb } from '../../lib/supabase'
 import { notifyTicketCreated } from '../../lib/slack'
 import type { TicketRow } from '../../lib/supabase'
 
@@ -11,7 +11,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(204).end()
 
   if (req.method === 'GET') {
-    const { data, error } = await supabase
+    const db = await getDb()
+    const { data, error } = await db
       .from('tickets')
       .select('*')
       .order('created_at', { ascending: false })
@@ -51,7 +52,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       updated_at: now,
     }
 
-    const { data, error } = await supabase
+    const db = await getDb()
+    const { data, error } = await db
       .from('tickets')
       .insert(ticket)
       .select()

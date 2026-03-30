@@ -1,13 +1,14 @@
-import { supabase } from './supabase'
+import { getDb } from './supabase'
 
 const FIVE_HOUR_MS = 5 * 60 * 60 * 1000
 const SEVEN_DAY_MS = 7 * 24 * 60 * 60 * 1000
 
 export async function recordTokenUsage(tokens: number, agentId: string): Promise<void> {
-  await supabase.from('usage_calls').insert({ agent_id: agentId, tokens })
+  const db = await getDb()
+  await db.from('usage_calls').insert({ agent_id: agentId, tokens })
   // Clean up records older than 7 days
   const cutoff = new Date(Date.now() - SEVEN_DAY_MS).toISOString()
-  await supabase.from('usage_calls').delete().lt('created_at', cutoff)
+  await db.from('usage_calls').delete().lt('created_at', cutoff)
 }
 
 export async function getWindowUsage() {
@@ -19,7 +20,8 @@ export async function getWindowUsage() {
   const sevenDayLimit = parseInt(process.env.SEVEN_DAY_LIMIT ?? '500000')
 
   // Fetch all calls within the 7-day window (covers both windows)
-  const { data: calls } = await supabase
+  const db = await getDb()
+  const { data: calls } = await db
     .from('usage_calls')
     .select('tokens, created_at')
     .gte('created_at', sevenDayCutoff)

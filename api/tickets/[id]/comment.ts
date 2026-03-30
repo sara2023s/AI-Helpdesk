@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { v4 as uuidv4 } from 'uuid'
-import { supabase, getTicket, upsertTicket } from '../../../lib/supabase'
+import { getTicket, upsertTicket } from '../../../lib/supabase'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../../../../lib/supabase'
+import { getDb } from '../../../../lib/supabase'
 import { runAgent } from '../../../../lib/agents/runner'
 
 export const config = {
@@ -16,8 +16,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { id: ticketId, agentId } = req.query as { id: string; agentId: string }
 
+  const db = await getDb()
+
   // Validate agent exists
-  const { data: agent } = await supabase
+  const { data: agent } = await db
     .from('agents')
     .select('status')
     .eq('id', agentId)
@@ -27,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (agent.status === 'busy') return res.status(409).json({ error: `${agentId} is currently busy` })
 
   // Validate ticket exists
-  const { data: ticket } = await supabase
+  const { data: ticket } = await db
     .from('tickets')
     .select('id')
     .eq('id', ticketId)

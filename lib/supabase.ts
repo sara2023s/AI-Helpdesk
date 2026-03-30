@@ -1,17 +1,17 @@
-import { createClient } from '@supabase/supabase-js'
-
 // Server-side Supabase client — uses the service role key so it bypasses RLS.
 // Only import this in API routes (api/**), never in src/** (frontend).
+//
+// Uses dynamic import of @supabase/supabase-js to avoid static top-level
+// module initialization in Vercel Node.js ESM lambdas (causes silent crash).
 
-// Created on first use — NOT at module load time.
-// This prevents the Vercel cold-start crash if the import of @supabase/supabase-js
-// itself causes a side effect before env vars are injected.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _client: any = null
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getClient(): any {
+async function getClient(): Promise<any> {
   if (!_client) {
+    // Dynamic import — defers module load to first actual use
+    const { createClient } = await import('@supabase/supabase-js')
     const url = process.env.SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!url || !key) {
@@ -24,15 +24,8 @@ function getClient(): any {
   return _client
 }
 
-// Transparent proxy so call sites remain `supabase.from(...)` etc.
-// Typed as any to avoid `never` inference when Database generics are absent.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const supabase: any = new Proxy({} as any, {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get(_t: any, prop: string | symbol) {
-    return Reflect.get(getClient(), prop)
-  },
-})
+/** Returns the shared Supabase service-role client. */
+export const getDb = getClient
 
 // ─── Types that mirror the DB schema ──────────────────────────────────────────
 
@@ -76,12 +69,14 @@ export interface AgentRow {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export async function getTicket(id: string): Promise<TicketRow | null> {
-  const { data } = await supabase.from('tickets').select('*').eq('id', id).single()
+  const db = await getClient()
+  const { data } = await db.from('tickets').select('*').eq('id', id).single()
   return data ?? null
 }
 
 export async function upsertTicket(ticket: TicketRow): Promise<TicketRow> {
-  const { data, error } = await supabase
+  const db = await getClient()
+  const { data, error } = await db
     .from('tickets')
     .upsert(ticket)
     .select()
@@ -94,7 +89,8 @@ export async function updateAgent(
   id: string,
   patch: Partial<AgentRow>,
 ): Promise<AgentRow> {
-  const { data, error } = await supabase
+  const db = await getClient()
+  const { data, error } = await db
     .from('agents')
     .update({ ...patch, last_active_at: new Date().toISOString() })
     .eq('id', id)

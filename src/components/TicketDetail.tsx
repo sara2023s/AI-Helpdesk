@@ -94,7 +94,11 @@ function CommentBubble({ comment }: { comment: Ticket['comments'][0] }) {
   )
 }
 
-const AGENT_IDS: AgentId[] = ['manager', 'designer', 'developer', 'copywriter', 'tester', 'reviewer']
+const AGENT_IDS: AgentId[] = [
+  'manager', 'researcher', 'analyst', 'brand',
+  'designer', 'developer', 'copywriter', 'seo',
+  'devops', 'tester', 'reviewer', 'sales',
+]
 
 export function TicketDetail({ ticket, agents, onClose, onUpdated }: Props) {
   const [comment, setComment] = useState('')
@@ -229,7 +233,7 @@ export function TicketDetail({ ticket, agents, onClose, onUpdated }: Props) {
               <ChevronDown size={12} className={showTrigger ? 'rotate-180' : ''} />
             </button>
             {showTrigger && (
-              <div className="absolute top-full left-0 mt-1 bg-surface-800 border border-surface-600 rounded-xl shadow-xl z-10 p-2 grid grid-cols-3 gap-1.5 w-72">
+              <div className="absolute top-full left-0 mt-1 bg-surface-800 border border-surface-600 rounded-xl shadow-xl z-10 p-2 grid grid-cols-4 gap-1.5 w-96">
                 {AGENT_IDS.map(agentId => {
                   const cfg = AGENT_CONFIG[agentId]
                   const agent = agents.find(a => a.id === agentId)
@@ -239,11 +243,12 @@ export function TicketDetail({ ticket, agents, onClose, onUpdated }: Props) {
                       key={agentId}
                       onClick={() => handleTrigger(agentId)}
                       disabled={busy || triggeringAgent !== null}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-colors text-center
+                      className={`flex flex-col items-center gap-0.5 p-2 rounded-lg border transition-colors text-center
                         ${busy ? 'border-surface-600 opacity-40 cursor-not-allowed' : 'border-surface-600 hover:border-violet-600 hover:bg-violet-950/20'}`}
                     >
-                      <span className="text-lg">{cfg.emoji}</span>
-                      <span className="text-[10px] text-slate-300 font-medium">{cfg.name}</span>
+                      <span className="text-base">{cfg.emoji}</span>
+                      <span className="text-[10px] text-slate-300 font-medium leading-none">{cfg.name}</span>
+                      <span className="text-[9px] text-slate-600 leading-none">{cfg.role.split(' ')[0]}</span>
                       {triggeringAgent === agentId && <Loader2 size={10} className="animate-spin text-violet-400" />}
                       {busy && <span className="text-[9px] text-amber-500">busy</span>}
                     </button>

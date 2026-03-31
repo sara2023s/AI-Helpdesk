@@ -1,5 +1,5 @@
 export type TicketStatus = 'new' | 'manager-review' | 'in-progress' | 'testing' | 'review' | 'done' | 'blocked'
-export type AgentId = 'manager' | 'designer' | 'developer' | 'copywriter' | 'tester' | 'reviewer'
+export type AgentId = 'manager' | 'researcher' | 'analyst' | 'brand' | 'designer' | 'developer' | 'copywriter' | 'seo' | 'devops' | 'tester' | 'reviewer' | 'sales'
 export type Priority = 'P0' | 'P1' | 'P2' | 'P3'
 export type TicketType = 'feature' | 'bug' | 'design' | 'content' | 'infrastructure'
 export type CommentType = 'comment' | 'status-change' | 'plan' | 'question' | 'approval' | 'system' | 'typing'
@@ -71,13 +71,19 @@ export const PRIORITY_CONFIG: Record<Priority, { color: string; dot: string }> =
   P3: { color: 'text-slate-400',  dot: 'bg-slate-500'  },
 }
 
-export const AGENT_CONFIG: Record<AgentId, { emoji: string; color: string; name: string }> = {
-  manager:    { emoji: '🧠', color: '#7c3aed', name: 'Max'   },
-  designer:   { emoji: '🎨', color: '#db2777', name: 'Aria'  },
-  developer:  { emoji: '💻', color: '#0891b2', name: 'Dev'   },
-  copywriter: { emoji: '✍️', color: '#059669', name: 'Kai'   },
-  tester:     { emoji: '🧪', color: '#9333ea', name: 'Quinn' },
-  reviewer:   { emoji: '🔍', color: '#b45309', name: 'Ray'   },
+export const AGENT_CONFIG: Record<AgentId, { emoji: string; color: string; name: string; role: string }> = {
+  manager:    { emoji: '🧠', color: '#7c3aed', name: 'Max',   role: 'Project Manager'    },
+  researcher: { emoji: '🔭', color: '#0f766e', name: 'Scout', role: 'Market Researcher'  },
+  analyst:    { emoji: '📊', color: '#0369a1', name: 'Sam',   role: 'Business Analyst'   },
+  brand:      { emoji: '🎯', color: '#6d28d9', name: 'Blake', role: 'Brand Strategist'   },
+  designer:   { emoji: '🎨', color: '#db2777', name: 'Aria',  role: 'UI/UX Designer'     },
+  developer:  { emoji: '💻', color: '#0891b2', name: 'Dev',   role: 'Developer'          },
+  copywriter: { emoji: '✍️', color: '#059669', name: 'Kai',   role: 'Copywriter'         },
+  seo:        { emoji: '📈', color: '#15803d', name: 'Sage',  role: 'SEO Specialist'     },
+  devops:     { emoji: '⚙️', color: '#c2410c', name: 'Rex',   role: 'DevOps Engineer'    },
+  tester:     { emoji: '🧪', color: '#9333ea', name: 'Quinn', role: 'QA Tester'          },
+  reviewer:   { emoji: '🔍', color: '#b45309', name: 'Ray',   role: 'Code Reviewer'      },
+  sales:      { emoji: '💼', color: '#be123c', name: 'Nova',  role: 'Proposals & Sales'  },
 }
 
 export const KANBAN_COLUMNS: TicketStatus[] = [

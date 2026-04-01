@@ -217,7 +217,7 @@ export async function runAgent(agentId: string, ticketId: string): Promise<void>
           id: uuidv4(),
           authorId: agentId,
           authorName: persona.name,
-          content: `⚠️ I ran into an issue processing this ticket. Please check the configuration and try again.`,
+          content: `⚠️ I ran into an issue: ${(err as Error).message}`,
           timestamp: new Date().toISOString(),
           type: 'system',
         },

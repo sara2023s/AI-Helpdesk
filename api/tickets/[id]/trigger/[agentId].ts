@@ -1,8 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { runAgent } from '../../../../lib/agents/runner.js'
 
 export const config = {
-  maxDuration: 300, // 5 minutes — requires Vercel Pro
+  maxDuration: 10,
 }
 
 async function getDb() {
@@ -19,35 +18,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   if (req.method === 'OPTIONS') return res.status(204).end()
-
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { id: ticketId, agentId } = req.query as { id: string; agentId: string }
 
   const db = await getDb()
 
-  // Validate agent exists
-  const { data: agent } = await db
-    .from('agents')
-    .select('status')
-    .eq('id', agentId)
-    .single()
-
+  // Validate agent
+  const { data: agent } = await db.from('agents').select('status').eq('id', agentId).single()
   if (!agent) return res.status(404).json({ error: 'Agent not found' })
   if (agent.status === 'busy') return res.status(409).json({ error: `${agentId} is currently busy` })
 
-  // Validate ticket exists
-  const { data: ticket } = await db
-    .from('tickets')
-    .select('id')
-    .eq('id', ticketId)
-    .single()
-
+  // Validate ticket
+  const { data: ticket } = await db.from('tickets').select('id').eq('id', ticketId).single()
   if (!ticket) return res.status(404).json({ error: 'Ticket not found' })
 
-  // Run agent (and auto-progress chain) synchronously within this request
-  // The 300s maxDuration handles the full agent chain (avg 30-60s per agent)
-  await runAgent(agentId, ticketId)
+  // Queue the job — local worker picks it up and runs it using Claude CLI (Pro subscription)
+  const { error } = await db.from('agent_queue').insert({
+    ticket_id: ticketId,
+    agent_id: agentId,
+    status: 'pending',
+  })
 
-  return res.json({ ok: true })
+  if (error) return res.status(500).json({ error: error.message })
+
+  return res.json({ ok: true, queued: true, message: 'Job queued — make sure npm run agents is running on your machine' })
 }

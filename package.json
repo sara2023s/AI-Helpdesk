@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "agents": "npx tsx local/worker.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -17,6 +18,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "dotenv": "^16.4.5",
+    "tsx": "^4.19.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "@types/uuid": "^9.0.8",

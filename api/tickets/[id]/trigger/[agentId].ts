@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { runAgent } from '../../../../lib/agents/runner'
 
 export const config = {
   maxDuration: 300, // 5 minutes — requires Vercel Pro
@@ -47,6 +46,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Run agent (and auto-progress chain) synchronously within this request
   // The 300s maxDuration handles the full agent chain (avg 30-60s per agent)
+  // Dynamic import so Vercel nft traces the full runner dependency tree correctly
+  const { runAgent } = await import('../../../../lib/agents/runner.js')
   await runAgent(agentId, ticketId)
 
   return res.json({ ok: true })

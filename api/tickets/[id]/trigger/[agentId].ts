@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { runAgent } from '../../../../lib/agents/runner'
+import { runAgent } from '../../../../lib/agents/runner.js'
 
 export const config = {
   maxDuration: 300, // 5 minutes — requires Vercel Pro

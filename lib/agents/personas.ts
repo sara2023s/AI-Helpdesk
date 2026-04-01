@@ -1,5 +1,5 @@
-import type { TicketRow } from '../supabase'
-import { getProject } from '../projects'
+import type { TicketRow } from '../supabase.js'
+import { getProject } from '../projects.js'
 
 function projectContext(ticket: TicketRow): string {
   const p = getProject(ticket.project)

@@ -1,4 +1,4 @@
-import { TicketRow } from './supabase'
+import { TicketRow } from './supabase.js'
 
 async function sendSlackNotification(
   message: string,

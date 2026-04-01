@@ -1,11 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { v4 as uuidv4 } from 'uuid'
-import { getTicket, upsertTicket, updateAgent, type TicketRow } from '../supabase'
-import { recordTokenUsage, isCapacityAvailable } from '../usage'
-import { notifyAgentUpdate, notifyTicketDone, notifyTicketBlocked } from '../slack'
-import { commitFiles, type FileChange } from '../github'
-import { getProject } from '../projects'
-import { PERSONAS } from './personas'
+import { getTicket, upsertTicket, updateAgent, type TicketRow } from '../supabase.js'
+import { recordTokenUsage, isCapacityAvailable } from '../usage.js'
+import { notifyAgentUpdate, notifyTicketDone, notifyTicketBlocked } from '../slack.js'
+import { commitFiles, type FileChange } from '../github.js'
+import { getProject } from '../projects.js'
+import { PERSONAS } from './personas.js'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 

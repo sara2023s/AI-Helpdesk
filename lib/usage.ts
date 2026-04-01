@@ -1,4 +1,4 @@
-import { getDb } from './supabase'
+import { getDb } from './supabase.js'
 
 const FIVE_HOUR_MS = 5 * 60 * 60 * 1000
 const SEVEN_DAY_MS = 7 * 24 * 60 * 60 * 1000

@@ -3,7 +3,8 @@
   "outputDirectory": "dist",
   "functions": {
     "api/tickets/[id]/trigger/[agentId].ts": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "lib/**"
     }
   },
   "rewrites": [

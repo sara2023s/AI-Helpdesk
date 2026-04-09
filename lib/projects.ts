@@ -146,29 +146,21 @@ const SARA_REPOS: ProjectInfo[] = [
     stack: 'React + Vite + TypeScript + Tailwind + shadcn/ui',
     liveUrl: 'https://soul-to-soul.vercel.app',
   },
-  {
-    name: 'ABCWebsite',
-    owner: 'sara2023s',
-    repo: 'ABCWebsite',
-    branch: 'main',
-    stack: 'React + Vite + TypeScript + Tailwind',
-  },
 ]
 
 // ─── Appdoers org repos ───────────────────────────────────────────────────────
-// Add repos here once the Appdoers GitHub org is authorized.
-// Replace 'AppdoersDevTeam' with the actual org name if different.
+// Requires GITHUB_TOKEN with push access to the AppdoersDevTeam org.
 
 const APPDOERS_REPOS: ProjectInfo[] = [
-  // Example — uncomment and fill in once org is authorized:
-  // {
-  //   name: 'Client Project Name',
-  //   owner: 'AppdoersDevTeam',
-  //   repo: 'repo-name',
-  //   branch: 'main',
-  //   stack: 'React + Vite + TypeScript + Tailwind',
-  //   liveUrl: 'https://client-site.com',
-  // },
+  {
+    name: 'ABCWebsite',
+    owner: 'AppdoersDevTeam',
+    repo: 'ABCWebsite',
+    branch: 'main',
+    stack: 'React + Vite + TypeScript + Tailwind + Supabase',
+    liveUrl: 'https://ashburtonbaptistchurch.vercel.app',
+    rootDir: 'ABCWebsite',
+  },
 ]
 
 // ─── Registry ─────────────────────────────────────────────────────────────────

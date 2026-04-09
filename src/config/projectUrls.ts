@@ -20,7 +20,7 @@ export const PROJECT_URLS: Record<string, ProjectUrls> = {
   'E-Commerce':           { live: 'https://e-commerce-website.vercel.app',       localhost: 'http://localhost:5173' },
   'Dashboard Template':   { live: 'https://dashboard-template.vercel.app',       localhost: 'http://localhost:5173' },
   'Soul2Soul':            { live: 'https://soul-to-soul.vercel.app',             localhost: 'http://localhost:5173' },
-  'ABCWebsite':           { localhost: 'http://localhost:5173' },
+  'ABCWebsite':           { live: 'https://ashburtonbaptistchurch.vercel.app', localhost: 'http://localhost:3000' },
   // 'General' has no live server — built files go to ./builds/<ticketId>/ and
   // are served at localhost:4173 after running: npm run preview --prefix builds/<ticketId>
   // The Local button for General tickets is handled dynamically in TicketDetail.

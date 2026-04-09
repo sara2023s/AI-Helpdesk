@@ -1,4 +1,4 @@
-export type TicketStatus = 'new' | 'manager-review' | 'in-progress' | 'testing' | 'review' | 'done' | 'blocked'
+export type TicketStatus = 'new' | 'manager-review' | 'awaiting_approval' | 'in-progress' | 'testing' | 'review' | 'done' | 'blocked' | 'paused'
 export type AgentId = 'manager' | 'researcher' | 'analyst' | 'brand' | 'designer' | 'developer' | 'copywriter' | 'seo' | 'devops' | 'tester' | 'reviewer' | 'sales'
 export type Priority = 'P0' | 'P1' | 'P2' | 'P3'
 export type TicketType = 'feature' | 'bug' | 'design' | 'content' | 'infrastructure'
@@ -55,13 +55,15 @@ export interface Usage {
 }
 
 export const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: string; border: string }> = {
-  'new':            { label: 'New',            color: 'text-slate-300',  bg: 'bg-slate-800',   border: 'border-slate-600' },
-  'manager-review': { label: 'Manager Review', color: 'text-amber-300',  bg: 'bg-amber-950',   border: 'border-amber-700' },
-  'in-progress':    { label: 'In Progress',    color: 'text-blue-300',   bg: 'bg-blue-950',    border: 'border-blue-700'  },
-  'testing':        { label: 'Testing',        color: 'text-purple-300', bg: 'bg-purple-950',  border: 'border-purple-700'},
-  'review':         { label: 'Review',         color: 'text-orange-300', bg: 'bg-orange-950',  border: 'border-orange-700'},
-  'done':           { label: 'Done',           color: 'text-green-300',  bg: 'bg-green-950',   border: 'border-green-700' },
-  'blocked':        { label: 'Blocked',        color: 'text-red-300',    bg: 'bg-red-950',     border: 'border-red-700'   },
+  'new':               { label: 'New',              color: 'text-slate-300',  bg: 'bg-slate-800',    border: 'border-slate-600'  },
+  'manager-review':    { label: 'Manager Review',   color: 'text-amber-300',  bg: 'bg-amber-950',    border: 'border-amber-700'  },
+  'awaiting_approval': { label: 'Awaiting Approval',color: 'text-violet-300', bg: 'bg-violet-950',   border: 'border-violet-700' },
+  'in-progress':       { label: 'In Progress',      color: 'text-blue-300',   bg: 'bg-blue-950',     border: 'border-blue-700'   },
+  'testing':           { label: 'Testing',          color: 'text-purple-300', bg: 'bg-purple-950',   border: 'border-purple-700' },
+  'review':            { label: 'Review',           color: 'text-orange-300', bg: 'bg-orange-950',   border: 'border-orange-700' },
+  'done':              { label: 'Done',             color: 'text-green-300',  bg: 'bg-green-950',    border: 'border-green-700'  },
+  'blocked':           { label: 'Blocked',          color: 'text-red-300',    bg: 'bg-red-950',      border: 'border-red-700'    },
+  'paused':            { label: 'Paused',           color: 'text-yellow-300', bg: 'bg-yellow-950',   border: 'border-yellow-700' },
 }
 
 export const PRIORITY_CONFIG: Record<Priority, { color: string; dot: string }> = {
@@ -87,5 +89,5 @@ export const AGENT_CONFIG: Record<AgentId, { emoji: string; color: string; name:
 }
 
 export const KANBAN_COLUMNS: TicketStatus[] = [
-  'new', 'manager-review', 'in-progress', 'testing', 'review', 'done', 'blocked'
+  'new', 'manager-review', 'awaiting_approval', 'in-progress', 'testing', 'review', 'done', 'blocked', 'paused'
 ]

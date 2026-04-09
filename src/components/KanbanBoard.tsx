@@ -8,13 +8,15 @@ interface Props {
 }
 
 const COLUMN_ICONS: Record<TicketStatus, string> = {
-  'new':            '📥',
-  'manager-review': '🧠',
-  'in-progress':    '⚡',
-  'testing':        '🧪',
-  'review':         '🔍',
-  'done':           '✅',
-  'blocked':        '🚨',
+  'new':               '📥',
+  'manager-review':    '🧠',
+  'awaiting_approval': '⏳',
+  'in-progress':       '⚡',
+  'testing':           '🧪',
+  'review':            '🔍',
+  'done':              '✅',
+  'blocked':           '🚨',
+  'paused':            '⏸️',
 }
 
 function Column({ status, tickets, onTicketClick }: {

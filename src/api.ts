@@ -96,6 +96,26 @@ export async function addComment(id: string, content: string): Promise<Ticket> {
   return mapTicket(await r.json())
 }
 
+export async function pauseTicket(ticketId: string): Promise<Ticket> {
+  const r = await fetch(`${BASE}/tickets/${ticketId}/pause`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'pause' }),
+  })
+  if (!r.ok) throw new Error('Failed to pause ticket')
+  return mapTicket(await r.json())
+}
+
+export async function resumeTicket(ticketId: string): Promise<Ticket> {
+  const r = await fetch(`${BASE}/tickets/${ticketId}/pause`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'resume' }),
+  })
+  if (!r.ok) throw new Error('Failed to resume ticket')
+  return mapTicket(await r.json())
+}
+
 export async function triggerAgent(ticketId: string, agentId: string): Promise<void> {
   const r = await fetch(`${BASE}/tickets/${ticketId}/trigger/${agentId}`, {
     method: 'POST',

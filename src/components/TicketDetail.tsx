@@ -184,7 +184,7 @@ export function TicketDetail({ ticket, agents, onClose, onUpdated }: Props) {
     }
   }
 
-  const PAUSABLE_STATUSES = new Set(['new', 'manager-review', 'awaiting_approval', 'in-progress', 'testing', 'review'])
+  const PAUSABLE_STATUSES = new Set(['new', 'manager-review', 'awaiting_approval', 'in-progress', 'testing', 'review', 'blocked'])
 
   async function handlePause() {
     setPausing(true)

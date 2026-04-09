@@ -754,9 +754,15 @@ function startDevServerHttp() {
     json(404, { error: 'Not found' })
   })
 
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn('⚠️  Port 3001 already in use — dev server manager skipped (another worker may be running)\n')
+    } else {
+      console.error('Dev server HTTP error:', err.message)
+    }
+  })
   server.listen(3001, () => console.log('🌐 Dev server manager on http://localhost:3001\n'))
 }
 
 startDevServerHttp()
 main()
-startDevServerHttp()

@@ -248,10 +248,11 @@ async function processJob(job: { id: string; ticket_id: string; agent_id: string
       'awaiting-approval': 'awaiting_approval', 'awaitingapproval': 'awaiting_approval',
       'complete': 'done', 'completed': 'done', 'closed': 'done',
     }
-    const VALID_STATUSES = new Set(['new','manager-review','awaiting_approval','in-progress','testing','review','done','blocked'])
+    const VALID_STATUSES = new Set(['new','manager-review','awaiting_approval','in-progress','testing','review','done','blocked','paused'])
     const rawStatus = parsed.newStatus as string | undefined
+    const rawLower = rawStatus?.toLowerCase()
     const normStatus = rawStatus
-      ? (VALID_STATUSES.has(rawStatus) ? rawStatus : (STATUS_ALIASES[rawStatus.toLowerCase()] ?? base.status))
+      ? (VALID_STATUSES.has(rawLower!) ? rawLower! : (STATUS_ALIASES[rawLower!] ?? base.status))
       : base.status
     if (rawStatus && rawStatus !== normStatus) {
       console.log(`   ⚠️  Normalised status "${rawStatus}" → "${normStatus}"`)
@@ -534,8 +535,12 @@ async function main() {
   db
     .channel('agent_queue_changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agent_queue' }, async (payload) => {
-      if (payload.new.status === 'pending') {
-        await enqueueJob(payload.new as any)
+      try {
+        if (payload.new.status === 'pending') {
+          await enqueueJob(payload.new as any)
+        }
+      } catch (err) {
+        console.error('Realtime queue handler error:', (err as Error).message)
       }
     })
     .subscribe()
@@ -544,16 +549,20 @@ async function main() {
   db
     .channel('ticket_inserts')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets' }, async (payload) => {
-      const ticket = payload.new as any
-      // Dedup — don't queue if manager is already pending/processing for this ticket
-      const { data: existing } = await db.from('agent_queue').select('id')
-        .eq('ticket_id', ticket.id).eq('agent_id', 'manager').in('status', ['pending', 'processing']).limit(1)
-      if (existing && existing.length > 0) return
-      console.log(`\n📋 New ticket: "${ticket.title}" — queuing Max (manager)...`)
-      await Promise.all([
-        db.from('agent_queue').insert({ ticket_id: ticket.id, agent_id: 'manager', status: 'pending' }),
-        notifyTicketCreated(ticket),
-      ])
+      try {
+        const ticket = payload.new as any
+        // Dedup — don't queue if manager is already pending/processing for this ticket
+        const { data: existing } = await db.from('agent_queue').select('id')
+          .eq('ticket_id', ticket.id).eq('agent_id', 'manager').in('status', ['pending', 'processing']).limit(1)
+        if (existing && existing.length > 0) return
+        console.log(`\n📋 New ticket: "${ticket.title}" — queuing Max (manager)...`)
+        await Promise.all([
+          db.from('agent_queue').insert({ ticket_id: ticket.id, agent_id: 'manager', status: 'pending' }),
+          notifyTicketCreated(ticket),
+        ])
+      } catch (err) {
+        console.error('Realtime ticket insert handler error:', (err as Error).message)
+      }
     })
     .subscribe()
 
@@ -561,37 +570,41 @@ async function main() {
   db
     .channel('ticket_status_changes')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets' }, async (payload) => {
-      const prev = payload.old as any
-      const next = payload.new as any
+      try {
+        const prev = payload.old as any
+        const next = payload.new as any
 
-      // Only act on status transitions (not every update like comment saves)
-      if (prev.status === next.status) return
+        // Only act on status transitions (not every update like comment saves)
+        if (prev.status === next.status) return
 
-      // Map status → which agent should pick it up
-      const STATUS_AGENT: Record<string, string> = {
-        'manager-review':   'manager',
-        'awaiting_approval': 'manager',
-        'in-progress':       next.assigned_to ?? '',
-        'testing':           'tester',
-        'review':            'reviewer',
+        // Map status → which agent should pick it up
+        const STATUS_AGENT: Record<string, string> = {
+          'manager-review':   'manager',
+          'awaiting_approval': 'manager',
+          'in-progress':       next.assigned_to ?? '',
+          'testing':           'tester',
+          'review':            'reviewer',
+        }
+
+        const agentToQueue = STATUS_AGENT[next.status]
+        if (!agentToQueue || !PERSONAS[agentToQueue]) return
+
+        // Don't double-queue — check if this agent already has a pending/processing job for this ticket
+        const { data: existing } = await db
+          .from('agent_queue')
+          .select('id')
+          .eq('ticket_id', next.id)
+          .eq('agent_id', agentToQueue)
+          .in('status', ['pending', 'processing'])
+          .limit(1)
+
+        if (existing && existing.length > 0) return  // already queued
+
+        console.log(`\n🔄 Ticket "${next.title}" moved to ${next.status} — queuing ${agentToQueue}...`)
+        await db.from('agent_queue').insert({ ticket_id: next.id, agent_id: agentToQueue, status: 'pending' })
+      } catch (err) {
+        console.error('Realtime status change handler error:', (err as Error).message)
       }
-
-      const agentToQueue = STATUS_AGENT[next.status]
-      if (!agentToQueue || !PERSONAS[agentToQueue]) return
-
-      // Don't double-queue — check if this agent already has a pending/processing job for this ticket
-      const { data: existing } = await db
-        .from('agent_queue')
-        .select('id')
-        .eq('ticket_id', next.id)
-        .eq('agent_id', agentToQueue)
-        .in('status', ['pending', 'processing'])
-        .limit(1)
-
-      if (existing && existing.length > 0) return  // already queued
-
-      console.log(`\n🔄 Ticket "${next.title}" moved to ${next.status} — queuing ${agentToQueue}...`)
-      await db.from('agent_queue').insert({ ticket_id: next.id, agent_id: agentToQueue, status: 'pending' })
     })
     .subscribe()
 }

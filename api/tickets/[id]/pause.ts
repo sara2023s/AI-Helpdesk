@@ -33,7 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!ticket) return res.status(404).json({ error: 'Ticket not found' })
 
   if (action === 'pause') {
-    // Set ticket to paused and cancel all pending agent_queue jobs for this ticket
+    // Set ticket to paused and fail all pending agent_queue jobs for this ticket
+    // Note: agent_queue status constraint only allows: pending/processing/done/failed
     const [ticketResult] = await Promise.all([
       db.from('tickets')
         .update({ status: 'paused', updated_at: new Date().toISOString() })
@@ -41,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select()
         .single(),
       db.from('agent_queue')
-        .update({ status: 'cancelled', completed_at: new Date().toISOString() })
+        .update({ status: 'failed', error: 'paused_by_user', completed_at: new Date().toISOString() })
         .eq('ticket_id', ticketId)
         .eq('status', 'pending'),
     ])

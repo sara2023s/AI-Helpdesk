@@ -83,7 +83,7 @@ export default function App() {
 
       <div className="flex-1 flex gap-0 overflow-hidden">
         {/* Worker sidebar */}
-        <div className="flex-shrink-0 w-60 border-r border-surface-700 p-4 overflow-y-auto bg-surface-900/30">
+        <div className="flex-shrink-0 w-52 border-r border-surface-700 overflow-hidden">
           <WorkerPanel
             agents={agents}
             tickets={tickets}

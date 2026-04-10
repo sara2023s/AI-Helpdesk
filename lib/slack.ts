@@ -21,9 +21,35 @@ async function sendSlackNotification(
 }
 
 const AGENT_EMOJI: Record<string, string> = {
-  manager: '🧠', designer: '🎨', developer: '💻',
-  copywriter: '✍️', tester: '🧪', reviewer: '🔍',
+  manager:    '🧠',
+  researcher: '🔭',
+  analyst:    '📊',
+  brand:      '🎯',
+  designer:   '🎨',
+  developer:  '💻',
+  copywriter: '✍️',
+  seo:        '📈',
+  devops:     '⚙️',
+  tester:     '🧪',
+  reviewer:   '🔍',
+  sales:      '💼',
 }
+
+const AGENT_NAME: Record<string, string> = {
+  manager:    'Max',
+  researcher: 'Scout',
+  analyst:    'Sam',
+  brand:      'Blake',
+  designer:   'Aria',
+  developer:  'Dev',
+  copywriter: 'Kai',
+  seo:        'Sage',
+  devops:     'Rex',
+  tester:     'Quinn',
+  reviewer:   'Ray',
+  sales:      'Nova',
+}
+
 const PRIORITY_EMOJI: Record<string, string> = {
   P0: '🔴', P1: '🟠', P2: '🔵', P3: '⚪',
 }
@@ -57,45 +83,85 @@ export async function notifyAgentUpdate(
   comment: string,
 ): Promise<void> {
   const ae = AGENT_EMOJI[agentId] ?? '🤖'
-  const short = comment.length > 200 ? comment.substring(0, 200) + '...' : comment
+  const name = AGENT_NAME[agentId] ?? agentName
+  const pe = PRIORITY_EMOJI[ticket.priority] ?? '⚪'
+  const short = comment.length > 1200 ? comment.substring(0, 1200) + '…' : comment
+
+  // Status label mapping
+  const statusLabel: Record<string, string> = {
+    'new': 'New', 'manager-review': 'Manager Review', 'awaiting_approval': '⏳ Awaiting Approval',
+    'in-progress': '🔄 In Progress', 'testing': '🧪 Testing', 'review': '🔍 Review',
+    'done': '✅ Done', 'blocked': '🚨 Blocked',
+  }
+
   await sendSlackNotification(
-    `${ae} ${agentName} updated \`${ticket.id}\`: ${ticket.title}`,
+    `${ae} ${name} posted an update on "${ticket.title}"`,
     [
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `${ae} *${agentName}* commented on \`${ticket.id}\`:\n_${short}_`,
+          text: `${ae} *${name}* just posted on \`${ticket.id}\`\n*${ticket.title}*`,
+        },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `_${short}_`,
         },
       },
       {
         type: 'context',
-        elements: [{ type: 'mrkdwn', text: `Status: *${ticket.status}* | Project: *${ticket.project}*` }],
+        elements: [
+          { type: 'mrkdwn', text: `${pe} ${ticket.priority}  •  ${statusLabel[ticket.status] ?? ticket.status}  •  ${ticket.project}` },
+        ],
       },
+      { type: 'divider' },
     ],
   )
 }
 
 export async function notifyTicketDone(ticket: TicketRow): Promise<void> {
-  await sendSlackNotification(`✅ Ticket complete: ${ticket.title}`, [
+  const pe = PRIORITY_EMOJI[ticket.priority] ?? '⚪'
+  await sendSlackNotification(`✅ Done: ${ticket.title}`, [
     {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `✅ *Ticket Complete!*\n\`${ticket.id}\` — *${ticket.title}*\nProject: *${ticket.project}*`,
+        text: `✅ *Ticket Complete!*\n\`${ticket.id}\` — *${ticket.title}*`,
       },
     },
+    {
+      type: 'context',
+      elements: [
+        { type: 'mrkdwn', text: `${pe} ${ticket.priority}  •  Project: ${ticket.project}  •  All agents signed off` },
+      ],
+    },
+    { type: 'divider' },
   ])
 }
 
 export async function notifyTicketBlocked(ticket: TicketRow, reason: string): Promise<void> {
-  await sendSlackNotification(`🚨 BLOCKED: ${ticket.title} — needs attention`, [
+  const pe = PRIORITY_EMOJI[ticket.priority] ?? '⚪'
+  await sendSlackNotification(`🚨 Blocked: ${ticket.title}`, [
     {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `🚨 *Ticket Blocked!*\n\`${ticket.id}\` — *${ticket.title}*\n_${reason}_`,
+        text: `🚨 *Ticket Blocked — needs your input*\n\`${ticket.id}\` — *${ticket.title}*`,
       },
     },
+    {
+      type: 'section',
+      text: { type: 'mrkdwn', text: `_${reason}_` },
+    },
+    {
+      type: 'context',
+      elements: [
+        { type: 'mrkdwn', text: `${pe} ${ticket.priority}  •  Project: ${ticket.project}` },
+      ],
+    },
+    { type: 'divider' },
   ])
 }

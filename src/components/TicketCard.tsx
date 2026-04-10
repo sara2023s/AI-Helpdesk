@@ -57,21 +57,28 @@ export function TicketCard({ ticket, onClick }: Props) {
         </div>
       </div>
 
-      {isTyping && (
-        <div className="mt-2 flex items-center gap-1.5 text-amber-400">
-          <span className="text-xs">{agent?.emoji ?? '🤖'}</span>
-          <div className="flex gap-0.5">
-            <span className="typing-dot w-1 h-1 bg-amber-400 rounded-full inline-block" />
-            <span className="typing-dot w-1 h-1 bg-amber-400 rounded-full inline-block" />
-            <span className="typing-dot w-1 h-1 bg-amber-400 rounded-full inline-block" />
+      {isTyping && (() => {
+        const typingComment = ticket.comments.find(c => c.type === 'typing')
+        const stage = typingComment?.content ?? '…'
+        return (
+          <div className="mt-2 flex items-center gap-1.5 px-2 py-1 bg-amber-950/40 border border-amber-800/30 rounded-lg">
+            <span className="text-xs flex-shrink-0">{agent?.emoji ?? '🤖'}</span>
+            <div className="flex gap-0.5 flex-shrink-0">
+              <span className="typing-dot w-1 h-1 bg-amber-400 rounded-full inline-block" />
+              <span className="typing-dot w-1 h-1 bg-amber-400 rounded-full inline-block" />
+              <span className="typing-dot w-1 h-1 bg-amber-400 rounded-full inline-block" />
+            </div>
+            <span className="text-[10px] text-amber-300/70 italic truncate">{stage}</span>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {!isTyping && lastComment && lastComment.authorId !== 'user' && (
         <div className="mt-2 text-[10px] text-slate-500 line-clamp-1 border-t border-surface-700 pt-1.5">
           <span className="text-slate-400">{lastComment.authorName}:</span>{' '}
-          {lastComment.content.replace(/```[\s\S]*?```/g, '[code]').substring(0, 80)}
+          {typeof lastComment.content === 'string'
+            ? lastComment.content.replace(/```[\s\S]*?```/g, '[code]').substring(0, 80)
+            : '…'}
         </div>
       )}
     </div>

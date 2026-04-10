@@ -23,9 +23,11 @@ export function Header({ usage, onNewTicket, onRefresh, refreshing }: Props) {
         </div>
       </div>
 
-      {/* Usage bars */}
-      <div className="hidden md:block">
-        <UsageBars usage={usage} />
+      {/* CLI mode badge — tokens not tracked when using Claude Pro CLI */}
+      <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-950/50 border border-violet-800/30">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-[11px] font-medium text-violet-300">Claude Pro</span>
+        <span className="text-[10px] text-slate-600">CLI mode · unlimited</span>
       </div>
 
       {/* Actions */}

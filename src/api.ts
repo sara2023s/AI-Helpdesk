@@ -116,6 +116,15 @@ export async function resumeTicket(ticketId: string): Promise<Ticket> {
   return mapTicket(await r.json())
 }
 
+export async function pushToGitHub(ticketId: string): Promise<{ message: string }> {
+  const r = await fetch(`http://localhost:3001/push/${encodeURIComponent(ticketId)}`, {
+    method: 'POST',
+  })
+  const body = await r.json().catch(() => ({ error: 'Worker not reachable' }))
+  if (!r.ok) throw new Error(body.error || 'Push failed')
+  return body
+}
+
 export async function triggerAgent(ticketId: string, agentId: string): Promise<void> {
   const r = await fetch(`${BASE}/tickets/${ticketId}/trigger/${agentId}`, {
     method: 'POST',

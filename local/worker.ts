@@ -13,7 +13,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { spawn } from 'child_process'
+import { spawn, execSync } from 'child_process'
 import { v4 as uuidv4 } from 'uuid'
 import http from 'http'
 import path from 'path'
@@ -191,6 +191,23 @@ async function processJob(job: { id: string; ticket_id: string; agent_id: string
     return
   }
 
+  // Pull latest from GitHub before making changes (developer/devops agents only)
+  if (['developer', 'devops'].includes(agentId)) {
+    const project = getProject(ticket.project)
+    if (project?.localRelDir) {
+      const localDir = path.resolve(process.cwd(), '..', project.localRelDir)
+      if (fs.existsSync(localDir)) {
+        try {
+          console.log(`   📥 Pulling latest from GitHub...`)
+          execSync('git pull --rebase', { cwd: localDir, shell: true, stdio: 'pipe' })
+          console.log(`   ✅ Git pull complete`)
+        } catch (err) {
+          console.warn(`   ⚠️  Git pull failed (continuing anyway): ${(err as Error).message.split('\n')[0]}`)
+        }
+      }
+    }
+  }
+
   // Add typing indicator with first stage message
   const typingId = uuidv4()
   const stages = AGENT_STAGES[agentId] ?? ['Working on it…']
@@ -281,26 +298,23 @@ async function processJob(job: { id: string; ticket_id: string; agent_id: string
 
     console.log(`   ✅ ${persona.name} done. Status: ${normStatus}${parsed.assignTo ? ` → next: ${parsed.assignTo}` : ''}`)
 
-    // Write files to disk if agent produced any (for local preview / no-GitHub projects)
+    // Write files locally — always write to disk first, never auto-commit to GitHub
+    // User reviews locally, then clicks "Push to GitHub" in the UI
     if (parsed.files?.length) {
-      const { commitFiles } = await import('../lib/github.js')
       const project = getProject(ticket.project)
-      if (project) {
-        const commitResult = await commitFiles(project.owner, project.repo, project.branch, parsed.files, ticket.id, persona.name)
-        console.log(commitResult.success
-          ? `   📦 Committed ${commitResult.files.length} file(s): ${commitResult.commitUrl}`
-          : `   ⚠️  GitHub commit failed: ${commitResult.error}`)
-        if (commitResult.success && parsed.deployToVercel !== false) {
-          const { triggerVercelDeploy } = await import('../lib/vercel.js')
-          const deployResult = await triggerVercelDeploy(project.name, project.owner, project.repo, project.branch, ticket.id)
-          console.log(deployResult.success
-            ? `   🚀 Vercel deploy triggered: ${deployResult.deploymentUrl}`
-            : `   ℹ️  Vercel: ${deployResult.error}`)
+      if (project?.localRelDir) {
+        // Write to local project checkout for review
+        const localDir = path.resolve(process.cwd(), '..', project.localRelDir)
+        fs.mkdirSync(localDir, { recursive: true })
+        for (const file of parsed.files) {
+          const filePath = path.join(localDir, file.path)
+          fs.mkdirSync(path.dirname(filePath), { recursive: true })
+          fs.writeFileSync(filePath, file.content, 'utf8')
         }
+        console.log(`   💾 Wrote ${parsed.files.length} file(s) to ${localDir}`)
+        console.log(`   👁️  Review locally, then click "Push to GitHub" in the helpdesk UI`)
       } else {
-        // No GitHub project configured — write files to disk so they can be previewed locally
-        const fs = await import('fs')
-        const path = await import('path')
+        // No local dir configured — write to builds/ for preview
         const buildDir = path.join(process.cwd(), 'builds', ticketId)
         fs.mkdirSync(buildDir, { recursive: true })
         for (const file of parsed.files) {
@@ -762,6 +776,37 @@ function startDevServerHttp() {
       const srv = devServers.get(decodeURIComponent(stopMatch[1]))
       if (srv) { srv.process.kill(); devServers.delete(decodeURIComponent(stopMatch[1])) }
       return json(200, { ok: true })
+    }
+
+    // Push local changes to GitHub for a ticket's project
+    const pushMatch = req.url?.match(/^\/push\/(.+)$/)
+    if (req.method === 'POST' && pushMatch) {
+      const ticketId = decodeURIComponent(pushMatch[1])
+      try {
+        const { data: ticket } = await db.from('tickets').select('project, title').eq('id', ticketId).single()
+        if (!ticket) return json(404, { error: 'Ticket not found' })
+
+        const project = getProject(ticket.project)
+        if (!project?.localRelDir) return json(400, { error: `No local directory configured for project "${ticket.project}"` })
+
+        const localDir = path.resolve(process.cwd(), '..', project.localRelDir)
+        if (!fs.existsSync(localDir)) return json(400, { error: `Local directory not found: ${localDir}` })
+
+        // Check if there's anything to commit
+        const status = execSync('git status --porcelain', { cwd: localDir, shell: true }).toString().trim()
+        if (!status) return json(200, { ok: true, message: 'Nothing to commit — working tree clean' })
+
+        const commitMsg = `[${ticketId}] ${ticket.title}`
+        execSync(`git add -A && git commit -m "${commitMsg.replace(/"/g, "'")}"`, { cwd: localDir, shell: true, stdio: 'pipe' })
+        execSync(`git push origin ${project.branch}`, { cwd: localDir, shell: true, stdio: 'pipe' })
+
+        console.log(`\n📤 Pushed ${ticketId} changes to ${project.owner}/${project.repo}`)
+        return json(200, { ok: true, message: `Pushed to ${project.owner}/${project.repo}` })
+      } catch (err) {
+        const msg = (err as Error).message?.split('\n')[0] ?? String(err)
+        console.error(`\n❌ Push failed for ${pushMatch[1]}:`, msg)
+        return json(500, { ok: false, error: msg })
+      }
     }
 
     json(404, { error: 'Not found' })

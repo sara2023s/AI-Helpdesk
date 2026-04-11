@@ -21,6 +21,13 @@ export interface ProjectInfo {
   liveUrl?: string
   /** Root directory within the repo (if monorepo or nested) */
   rootDir?: string
+  /**
+   * Path to the local checkout on disk, relative to the parent of the AI-Helpdesk folder.
+   * e.g. 'ABCWebsite/ABCWebsite' → resolved as ../ABCWebsite/ABCWebsite from the worker's cwd.
+   * When set, the developer agent writes files here and the user reviews locally
+   * before clicking "Push to GitHub" in the UI.
+   */
+  localRelDir?: string
 }
 
 // ─── sara2023s repos ──────────────────────────────────────────────────────────
@@ -160,6 +167,7 @@ const APPDOERS_REPOS: ProjectInfo[] = [
     stack: 'React + Vite + TypeScript + Tailwind + Supabase',
     liveUrl: 'https://ashburtonbaptistchurch.vercel.app',
     rootDir: 'ABCWebsite',
+    localRelDir: 'ABCWebsite/ABCWebsite',  // Agents write here, user reviews, then pushes via UI
   },
 ]
 

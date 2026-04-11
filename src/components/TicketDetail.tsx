@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { X, Send, Loader2, ChevronDown, ChevronUp, Zap, CheckCircle, ListTodo, ExternalLink, Monitor, PauseCircle, PlayCircle } from 'lucide-react'
+import { X, Send, Loader2, ChevronDown, ChevronUp, Zap, CheckCircle, ListTodo, ExternalLink, Monitor, PauseCircle, PlayCircle, GitBranch } from 'lucide-react'
 import type { Ticket, Agent, AgentId } from '../types'
 import { STATUS_CONFIG, PRIORITY_CONFIG, AGENT_CONFIG } from '../types'
-import { addComment, triggerAgent, updateTicket, pauseTicket, resumeTicket } from '../api'
+import { addComment, triggerAgent, updateTicket, pauseTicket, resumeTicket, pushToGitHub } from '../api'
 import { getProjectUrls } from '../config/projectUrls'
 
 interface Props {
@@ -116,6 +116,8 @@ export function TicketDetail({ ticket, agents, onClose, onUpdated }: Props) {
   const [launchingLocal, setLaunchingLocal] = useState(false)
   const [localError, setLocalError] = useState('')
   const [pausing, setPausing] = useState(false)
+  const [pushing, setPushing] = useState(false)
+  const [pushMessage, setPushMessage] = useState('')
 
   const statusCfg = STATUS_CONFIG[ticket.status]
   const priorityCfg = PRIORITY_CONFIG[ticket.priority]
@@ -202,6 +204,18 @@ export function TicketDetail({ ticket, agents, onClose, onUpdated }: Props) {
       onUpdated(updated)
     } catch {}
     setPausing(false)
+  }
+
+  async function handlePush() {
+    setPushing(true)
+    setPushMessage('')
+    try {
+      const result = await pushToGitHub(ticket.id)
+      setPushMessage(result.message)
+    } catch (err) {
+      setPushMessage(err instanceof Error ? err.message : 'Push failed')
+    }
+    setPushing(false)
   }
 
   async function handleApprovePlan() {
@@ -301,6 +315,18 @@ export function TicketDetail({ ticket, agents, onClose, onUpdated }: Props) {
                   Resume
                 </button>
               )}
+              {/* Push to GitHub — shown for non-General projects in review/done status */}
+              {ticket.project !== 'General' && (ticket.status === 'review' || ticket.status === 'done') && (
+                <button
+                  onClick={handlePush}
+                  disabled={pushing}
+                  title="Commit local changes and push to GitHub"
+                  className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-slate-400 hover:text-emerald-300 border border-surface-600 hover:border-emerald-700 rounded-lg bg-surface-800 hover:bg-emerald-950/30 transition-colors disabled:opacity-50"
+                >
+                  {pushing ? <Loader2 size={11} className="animate-spin" /> : <GitBranch size={11} />}
+                  {pushing ? 'Pushing…' : 'Push to GitHub'}
+                </button>
+              )}
               <button onClick={onClose} className="p-1 text-slate-600 hover:text-slate-300 transition-colors rounded-lg hover:bg-surface-700 ml-1">
                 <X size={16} />
               </button>
@@ -338,6 +364,13 @@ export function TicketDetail({ ticket, agents, onClose, onUpdated }: Props) {
           {localError && (
             <div className="mx-5 mt-3 px-3 py-2 rounded-lg bg-red-950/40 border border-red-800/40 text-[11px] text-red-300 leading-relaxed">
               ⚠️ {localError}
+            </div>
+          )}
+
+          {/* Push to GitHub result */}
+          {pushMessage && (
+            <div className="mx-5 mt-3 px-3 py-2 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-300 leading-relaxed">
+              {pushMessage}
             </div>
           )}
 
